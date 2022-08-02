@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Feedback List</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+    <link rel="stylesheet" href="/static/css/lib/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Feedback Register</h1>
+        <form action="/feedback/write/action" method="post">
+            <div class="mb-3">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-control" name="title">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contents</label>
+                <textarea class="form-control" rows="5" name="contents"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="text" class="form-control" name="returnEmail">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+    <script src="/static/js/lib/jquery.min.js"></script>
+    <script src="/static/js/lib/bootstrap.min.js"></script>
+</body>
+</html>
