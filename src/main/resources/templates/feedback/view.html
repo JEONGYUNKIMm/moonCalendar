@@ -10,21 +10,150 @@
 <body>
     <div class="container">
         <h1>Feedback View</h1>
+        <form id="frm" action="/feedback/view/action" method="post" th:with="info=${resultMap.info}" enctype="multipart/form-data">
         <div class="mb-3">
             <label class="form-label">Title</label>
             <input type="text" class="form-label" name="" th:value="${info.title}">
         </div>
         <div class="mb-3">
-            <label class="form-label">Type</label>
+            <label class="form-label">Contents</label>
             <textarea class="form-control" rows="5" name="" th:text="${info.contents}"></textarea>
         </div>
         <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="text" class="form-control" name="" th:value="${info.email}">
         </div>
+        <div class="mb-3">
+            <label class="form-label">File Upload.</label>
+            <div class="mb-3" id="fileDiv">
+                <div class="custom-file mt-1">
+                    <input type="file" class="custom-file-input" id="customFile" name="customFile" onchange="fnChngFile(this);">
+                    <label class="custom-file-label" for="customFile">Choose file</label>
+                </div>
+            </div>
+            <div class="float-right mt-2">
+                <a class="btn btn-primary text-white" href="javascript:fnAddFileDiv();">+</a>
+                <a class="btn btn-danger text-white" href="javascript:fnDelFileDiv();">-</a>
+            </div>
+            <th:block th:if="${resultMap.fileList}">
+                <div class="fileList mt-3" th:each="id : ${resultMap.fileList}">
+                    <img alt="image file" style="width: 50%" class="form-control img-thumbnail mt-3" th:src="@{/file/download(id=${id})}">
+                    <div class="mt-2">
+                        <a class="btn btn-dark" th:href="@{/file/download(id=${id})}">Download</a>
+                        <button type="button" class="btn btn-danger" th:onclick="fnFileDelete(this,[[${id}]])">Delete File</button>
+                    </div>
+                </div>
+            </th:block>
+        </form>
+        </div>
         <button type="button" class="btn btn-success" onclick="javascript:location.href='/feedback/list'">Previous</button>
     </div>
     <script src="/static/js/lib/jquery.min.js"></script>
     <script src="/static/js/lib/bootstrap.min.js"></script>
+    <script th:inline="javascript">
+        let frm = $("#frm");
+        let $origFileDiv = $(".custom-file");
+        let fileMaxCnt = 3,
+            fileMaxSize = 10485760,
+            fileAllowExt = ["jpg", "jpeg", "png"];
+        let deleteFileIdArr = [];
+
+        function fnAddFileDiv(){
+            let fileDivCnt = $(".custom-file").length;
+
+            if (fileDivCnt >= fileMaxCnt){
+                alert("Can't add any more file.");
+                return false;
+            }
+
+            let $copyFileDiv = $origFileDiv.clone(true);
+
+            $copyFileDiv.find("input").val("");
+            $copyFileDiv.find("label").text("Choose file");
+            $copyFileDiv.find("label").attr("for", "customFile" + fileDivCnt);
+            $copyFileDiv.find("input").attr("id", "customFile" + fileDivCnt);
+            $copyFileDiv.find("input").attr("name", "customFile" + fileDivCnt);
+
+            $("#fileDiv").append($copyFileDiv);
+        }
+
+        function fnDelFileDiv(){
+            if ($(".custom-file").length <= 1){
+                alert("Can't Delete any more file.");
+                return false;
+            }
+            $(".custom-file")[$(".custom-file").length - 1].remove();
+        }
+
+        function fnChngFile(obj){
+            let fileObj = $(obj)[0];
+            let fileVal = fileObj.files[0].name;
+            let fileSize = fileObj.files[0].size;
+            let fileExt = fileVal.substring(fileVal.lastIndexOf(".") + 1, fileVal.length);
+            let flag = true;
+
+            if (fileAllowExt.indexOf(fileExt.toLowerCase()) < 0){
+                alert("It is not a registrable extension.");
+            } else if (fileSize > fileMaxSize){
+                alert("Attachments can be registered up to 10MB.");
+            } else if (($(".fileList").length + $(".custom-file-input").length) > 3){
+                alert("Attachments can be registered up to 3 number.");
+            } else{
+                flag = false;
+                $(obj).next("label").text(fileVal);
+            }
+
+            if (flag){
+                $(obj).val("");
+                $(obj).next("label").text("Choose file");
+            }
+        }
+
+        function fnFileDelete(obj, id){
+            if (confirm("Do you want to delete it?")){
+                let frm = $("#frm");
+                frm.attr("action", "/feedback/view/delete");
+                frm.submit();
+            }
+        }
+
+        function fnSubmit(){
+            if (confirm("Do you want to edit it?")){
+                $("#frm").submit();
+            }
+        }
+
+        $(function (){
+            frm.validate({
+                messages: {
+                    title: {
+                        required: "Custom required, Please enter a title."
+                    }
+                },
+                submitHandler: function (form){
+                    if (deleteFileIdArr.length > 0){
+                        $.ajax({
+                            url: "/file/delete/ajax",
+                            type: "post",
+                            data: { idArr: deleteFileIdArr },
+                            dataType: "json",
+                            success: function (r){
+                                if (r.result){
+                                    form.submit();
+                                } else {
+                                    alert("A problem occurred, and progress is interrupted. Try again in a few minutes.");
+                                }
+                            },
+                            error: function (e){
+                                console.log(e);
+                            }
+                        });
+                    } else {
+                        form.submit();
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
