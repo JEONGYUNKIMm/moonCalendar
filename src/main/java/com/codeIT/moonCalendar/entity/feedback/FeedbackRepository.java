@@ -12,12 +12,13 @@ public interface FeedbackRepository extends JpaRepository <Feedback, Long> {
     static final String UPDATE_FEEDBACK = "UPDATE Feedback " +
             "SET TITLE = :#{#feedbackRequestDto.title}, " +
             "CONTENTS = :#{#feedbackRequestDto.contents}, " +
+            "EMAIL = :#{#feedbackRequestDto.email}, " +
             "UPDATE_TIME = NOW() " +
             "WHERE ID = :#{#feedbackRequestDto.id}";
 
-    static final String UPDATE_FEEDBACK_READ_CNT_INC = "UPDATE Feedback"
-            + "SET READ_CNT = READ_CNT + 1"
-            + "WHERE ID = :id";
+    static final String UPDATE_FEEDBACK_READ_CNT_INC = "UPDATE Feedback " +
+            "SET READ_CNT = READ_CNT + 1 " +
+            "WHERE ID = :id";
 
     @Transactional
     @Modifying

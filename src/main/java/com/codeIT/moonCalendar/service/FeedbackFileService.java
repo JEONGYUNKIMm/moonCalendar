@@ -35,7 +35,7 @@ public class FeedbackFileService {
 
     public boolean uploadFile(MultipartHttpServletRequest multiRequest, Long feedbackId) throws Exception {
 
-        if (feedbackId == null) throw new NullPointerException("Empty FEEDBACKD_ID.");
+        if (feedbackId == null) throw new NullPointerException("Empty FEEDBACK_ID.");
 
         Map<String, MultipartFile> files = multiRequest.getFileMap();
 

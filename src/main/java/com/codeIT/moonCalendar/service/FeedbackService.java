@@ -9,11 +9,12 @@ import com.codeIT.moonCalendar.entity.feedback.FeedbackRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -21,23 +22,29 @@ import java.util.stream.Collectors;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
+    private final FeedbackFileService feedbackFileService;
 
     @Transactional
-    public Long save(FeedbackRequestDto feedbackSaveDto){
-        return feedbackRepository.save(feedbackSaveDto.toEntity()).getId();
+    public boolean save(FeedbackRequestDto feedbackRequestDto, MultipartHttpServletRequest multiRequest) throws Exception {
+
+        Feedback result = feedbackRepository.save(feedbackRequestDto.toEntity());
+
+        boolean resultFlag = false;
+
+        if(result != null){
+            feedbackFileService.uploadFile(multiRequest, result.getId());
+            resultFlag = true;
+        }
+
+        return resultFlag;
     }
 
-    //@Transactional(readOnly = true)
-    //public List <FeedbackResponseDto> findAll() {
-    //    return feedbackRepository.findAll().stream().map(FeedbackResponseDto::new).collect(Collectors.toList());
-    //}
-
     @Transactional(readOnly = true)
-    public HashMap<String, Object> findAll(Integer page, Integer size){
+    public HashMap<String, Object> findAll(Integer page, Integer size) throws Exception {
 
         HashMap<String, Object> resultMap = new HashMap<String, Object>();
 
-        Page<Feedback> list = feedbackRepository.findAll(PageRequest.of(page, size));
+        Page<Feedback> list = feedbackRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "registerTime")));
 
         resultMap.put("list", list.stream().map(FeedbackResponseDto::new).collect(Collectors.toList()));
         resultMap.put("paging", list.getPageable());
@@ -47,19 +54,33 @@ public class FeedbackService {
         return resultMap;
     }
 
-    public FeedbackResponseDto findById(Long id){
-        return new FeedbackResponseDto(feedbackRepository.findById(id).get());
+    public HashMap<String, Object> findById(Long id) throws Exception{
+        HashMap<String, Object> resultMap = new HashMap<String, Object>();
+
+        feedbackRepository.updateFeedbackReadCntInc(id);
+
+        FeedbackResponseDto info = new FeedbackResponseDto(feedbackRepository.findById(id).get());
+
+        resultMap.put("info", info);
+        resultMap.put("fileList", feedbackFileService.findByFeedbackId(info.getId()));
+
+        return resultMap;
     }
 
-    public int updateFeedback(FeedbackRequestDto feedbackRequestDto){
-        return feedbackRepository.updateFeedback(feedbackRequestDto);
+    public boolean updateFeedback(FeedbackRequestDto feedbackRequestDto, MultipartHttpServletRequest multiRequest) throws Exception{
+        int result = feedbackRepository.updateFeedback(feedbackRequestDto);
+
+        boolean resultFlag = false;
+
+        if (result > 0){
+            feedbackFileService.uploadFile(multiRequest, feedbackRequestDto.getId());
+            resultFlag = true;
+        }
+        return resultFlag;
     }
 
     public int updateFeedbackReadCntInc(Long id){
         return feedbackRepository.updateFeedbackReadCntInc(id);
     }
 
-    public void deleteById(Long id){
-        feedbackRepository.deleteById(id);
-    }
 }

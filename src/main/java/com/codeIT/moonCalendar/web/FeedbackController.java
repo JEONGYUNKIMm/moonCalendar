@@ -2,6 +2,7 @@ package com.codeIT.moonCalendar.web;
 
 
 import com.codeIT.moonCalendar.dto.feedback.FeedbackRequestDto;
+import com.codeIT.moonCalendar.entity.feedback.Feedback;
 import com.codeIT.moonCalendar.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -9,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 @RequiredArgsConstructor
 @Controller
@@ -40,7 +42,7 @@ public class FeedbackController {
             , FeedbackRequestDto feedbackRequestDto) throws Exception{
         try{
             if (feedbackRequestDto.getId() != null){
-                model.addAttribute("info", feedbackService.findById(feedbackRequestDto.getId()));
+                model.addAttribute("resultMap", feedbackService.findById(feedbackRequestDto.getId()));
             }
         } catch (Exception e){
             throw new Exception(e.getMessage());
@@ -49,13 +51,28 @@ public class FeedbackController {
     }
 
     @PostMapping("/feedback/write/action")
-    public String feedbackWriteAction(Model model
-            , FeedbackRequestDto feedbackRequestDto) throws Exception{
+    public String feedbackWriteAction(Model model,
+                                      FeedbackRequestDto feedbackRequestDto,
+                                      MultipartHttpServletRequest multiRequest) throws Exception{
         try{
-            Long result = feedbackService.save(feedbackRequestDto);
 
-            if (result < 0){
+            if (!feedbackService.save(feedbackRequestDto, multiRequest)){
                 throw new Exception("#Exception feedbackWriteAction!");
+            }
+        } catch (Exception e){
+            throw new Exception(e.getMessage());
+        }
+        return "redirect:/feedback/list";
+    }
+
+    @PostMapping("/feedback/view/action")
+    public String feedbackViewAction(Model model, FeedbackRequestDto feedbackRequestDto,
+                                     MultipartHttpServletRequest multiRequest) throws Exception {
+        try{
+            boolean result = feedbackService.updateFeedback(feedbackRequestDto, multiRequest);
+
+            if(!result) {
+                throw new Exception("#Exception feedbackViewAction!");
             }
         } catch (Exception e){
             throw new Exception(e.getMessage());
